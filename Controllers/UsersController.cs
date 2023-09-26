@@ -9,13 +9,15 @@ namespace OnlineShopAPI.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly UserService _service = new();
-
+    
+    // --- GET ALL USERS ---
     [HttpGet(Name = "GetUsers")]
     public IList<User> Get()
     {
         return _service.GetAllUsers();
     }
-
+    
+    // --- CREATE NEW USER ---
     [HttpPost(Name = "CreateUser")]
     public IActionResult CreateUser([FromBody] User user)
     {
@@ -29,6 +31,7 @@ public class UsersController : ControllerBase
         return Ok("User created successfully.");
     }
 
+    // DELETE USER
     [HttpDelete(Name = "DeleteUser")]
     public IActionResult DeleteUser([FromBody] String username)
     {

@@ -1,14 +1,15 @@
-using Microsoft.EntityFrameworkCore;
 using OnlineShopAPI.Service;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
+// create database context
 ShopDbContext context = new ShopDbContext();
 context.Database.EnsureCreated();
 
 // Add services to the container.
-
 builder.Services.AddControllers();
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
