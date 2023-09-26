@@ -5,20 +5,31 @@ using OnlineShopAPI.Service;
 namespace OnlineShopAPI.Controllers;
 
 [ApiController]
-[Route("[controller]")]
+[Route("api/[controller]")]
+
 public class UsersController : ControllerBase
 {
     private readonly UserService _service = new();
     
     // --- GET ALL USERS ---
-    [HttpGet(Name = "GetUsers")]
-    public IList<User> Get()
+    [HttpGet(Name = "GetAllUsers")]
+    public IActionResult GetUsers()
     {
-        return _service.GetAllUsers();
+        IList<User> users = _service.GetAllUsers();
+        return users.Count == 0 ? Ok(users) : NotFound("No users found."); 
     }
     
+    // --- GET USER BY USERNAME
+    [HttpGet("{username}", Name = "GetUserByUserName")]
+    public IActionResult GetUser(String username)
+    {
+        User? user = _service.GetUserByUserName(username);
+        return user != null ? Ok(user) : NotFound("User not found.");
+    }
+    
+    
     // --- CREATE NEW USER ---
-    [HttpPost(Name = "CreateUser")]
+    [HttpPost("create", Name = "CreateUser")]
     public IActionResult CreateUser([FromBody] User user)
     {
         User? duplicateUser = _service.GetUserByUserName(user.username);
@@ -30,10 +41,23 @@ public class UsersController : ControllerBase
         _service.AddUser(user);
         return Ok("User created successfully.");
     }
+    
+    // --- UPDATE USER ---
+    // TODO
+    // public IActionResult UpdateUser([FromBody] User updatedUser)
+    // {
+    //     User? userToUpdate = _service.GetUserById(updatedUser.Id);
+    //     if (userToUpdate == null)
+    //     {
+    //         return BadRequest("No user to update was found.");
+    //     }
+    //
+    //     userToUpdate.username = updatedUser.username;
+    // }
 
     // DELETE USER
-    [HttpDelete(Name = "DeleteUser")]
-    public IActionResult DeleteUser([FromBody] String username)
+    [HttpDelete("delete/{username}")]
+    public IActionResult DeleteUser(String username)
     {
         User? duplicateUser = _service.GetUserByUserName(username);
         if (!ModelState.IsValid)

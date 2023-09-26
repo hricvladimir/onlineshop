@@ -8,6 +8,8 @@ public interface IUserService
 
     User? GetUserByUserName(string username);
 
+    User? GetUserById(int id);
+
     IList<User> GetAllUsers();
 
     void DeleteUser(User user);

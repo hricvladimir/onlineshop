@@ -30,6 +30,11 @@ public class UserService : IUserService
         _context.SaveChanges();
     }
 
+    public User? GetUserById(int id)
+    {
+        return _context.Users.FirstOrDefault(s => s.Id == id);
+    }
+    
     public void DeleteUserByUsername(String username)
     {
         User? user = GetUserByUserName(username);
