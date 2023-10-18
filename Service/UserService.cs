@@ -34,14 +34,23 @@ public class UserService : IUserService
     {
         return _context.Users.FirstOrDefault(s => s.Id == id);
     }
+
+    public void UpdateUser(User updatedUser)
+    {
+        User? user = GetUserById(updatedUser.Id);
+        if (user != null)
+        {
+            user.username = updatedUser.username;
+            // user.password = updatedUser.password;
+            _context.SaveChanges();
+        }
+    }
     
     public void DeleteUserByUsername(String username)
     {
         User? user = GetUserByUserName(username);
-        Console.WriteLine("kasta");
         if (user != null)
         {
-            Console.WriteLine("kasta");
             _context.Users.Remove(user);
             _context.SaveChanges();
         }

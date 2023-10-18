@@ -1,4 +1,7 @@
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OnlineShopAPI.Entity;
 using OnlineShopAPI.Service;
 
@@ -16,7 +19,7 @@ public class UsersController : ControllerBase
     public IActionResult GetUsers()
     {
         IList<User> users = _service.GetAllUsers();
-        return users.Count == 0 ? Ok(users) : NotFound("No users found."); 
+        return users.Count > 0 ? Ok(users) : NotFound("No users found."); 
     }
     
     // --- GET USER BY USERNAME
@@ -30,30 +33,88 @@ public class UsersController : ControllerBase
     
     // --- CREATE NEW USER ---
     [HttpPost("create", Name = "CreateUser")]
-    public IActionResult CreateUser([FromBody] User user)
+    public IActionResult CreateUser([FromQuery] String username, [FromQuery] String password, [FromQuery] String email)
     {
-        User? duplicateUser = _service.GetUserByUserName(user.username);
-        if (!ModelState.IsValid)
-            return BadRequest("Invalid user data.");
+
+        if (username == "" || password == "" || email == "")
+        {
+            return BadRequest("NULL");
+        }
+        User? duplicateUser = _service.GetUserByUserName(username);
+
         if (duplicateUser != null)
             return BadRequest("User with this username already exists.");
         
-        _service.AddUser(user);
+        // creating new user
+        User newUser = new User();
+        
+        // username and email
+        newUser.username = username;
+        newUser.email = email;
+        
+        // creating a random salt
+        byte[] salt = getSalt();
+        newUser.salt = Convert.ToBase64String(salt);
+        
+        // salting and hashing password
+        byte[] hashBytes = GenerateSaltedHash(Encoding.ASCII.GetBytes(password), salt);
+        string hashString = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
+        newUser.hashedPassword = hashString;
+        
+        // adding user to DB
+        _service.AddUser(newUser);
         return Ok("User created successfully.");
     }
     
-    // --- UPDATE USER ---
-    // TODO
-    // public IActionResult UpdateUser([FromBody] User updatedUser)
-    // {
-    //     User? userToUpdate = _service.GetUserById(updatedUser.Id);
-    //     if (userToUpdate == null)
-    //     {
-    //         return BadRequest("No user to update was found.");
-    //     }
-    //
-    //     userToUpdate.username = updatedUser.username;
-    // }
+    static byte[] GenerateSaltedHash(byte[] plainText, byte[] salt)
+    {
+        HashAlgorithm algorithm = new SHA256Managed();
+
+        byte[] plainTextWithSaltBytes = 
+            new byte[plainText.Length + salt.Length];
+
+        for (int i = 0; i < plainText.Length; i++)
+        {
+            plainTextWithSaltBytes[i] = plainText[i];
+        }
+        for (int i = 0; i < salt.Length; i++)
+        {
+            plainTextWithSaltBytes[plainText.Length + i] = salt[i];
+        }
+
+        return algorithm.ComputeHash(plainTextWithSaltBytes);            
+    }
+    
+    private byte[] getSalt()
+    {
+        var random = new RNGCryptoServiceProvider();
+
+        // Maximum length of salt
+        int maxLength = 32;
+
+        // Empty salt array
+        byte[] salt = new byte[maxLength];
+
+        // Build the random bytes
+        random.GetNonZeroBytes(salt);
+
+        // Return the string encoded salt
+        return salt;
+    }
+    
+    //--- UPDATE USER ---
+    [HttpPut("update/{id:int}", Name = "UpdateUser")]
+    public IActionResult UpdateUser(int id, [FromBody] User updatedUser)
+    {
+        User? userToUpdate = _service.GetUserById(id);
+        if (userToUpdate == null)
+        {
+            return BadRequest("No user to update was found.");
+        }
+    
+        _service.UpdateUser(updatedUser);
+        return Ok("User was updated");
+    }
 
     // DELETE USER
     [HttpDelete("delete/{username}")]
